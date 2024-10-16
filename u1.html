@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>电话薄</title>
+    <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+    <link href="/static/layui/css/layui.css" rel="stylesheet">
+</head>
+<style>
+    .mid {
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 1rem;
+    }
+
+    .bt1 {
+        width: 8rem;
+    }
+
+    .a1 {
+        display: flex;
+        align-items: center;
+        /* 新增的属性，用于垂直居中 */
+        justify-content: center;
+        /* 保持水平居中 */
+        text-align: center;
+        padding: 4px;
+        margin: 0.4rem;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        height: 2rem;
+        font-size: 0.7rem;
+    }
+
+    /* 自定义弹出层样式 */
+    .pretty-layer .layui-layer-content {
+      background-color: #fff; /* 背景颜色 */
+      color: #333; /* 文字颜色 */
+      font-size: 1rem; /* 文字大小 */
+      border-radius: 10px; /* 边框圆角 */
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* 阴影效果 */
+      padding: 25px; /* 内边距 */
+    }
+    .pretty-layer .layui-layer-title {
+      border-bottom: none; /* 移除标题栏底部边框 */
+    }
+</style>
+
+<body>
+
+
+    <div class="layui-btn-container mid">
+
+        <span class="layui-breadcrumb">
+            <a href="javascript:setunit1()">首页</a>
+            <a href="/load">管理</a>
+        </span>
+        <br />
+        <br />
+        <br />
+        <!--搜索-->
+        <div class="layui-form-item">
+            <div class="layui-row">
+
+                <div class="layui-col-xs9">
+                    <div class="layui-input-wrap">
+                        <div class="layui-input-prefix">
+                            <i class="layui-icon layui-icon-search"></i>
+                        </div>
+                        <input type="text" id="stxt" value="" lay-verify="required|phone" placeholder="手机、单位或姓名"
+                            lay-reqtext="请填写手机号" autocomplete="off" class="layui-input" id="reg-cellphone">
+                    </div>
+                </div>
+
+                <div class="layui-col-xs3">
+                    <div style="margin-left: 11px;">
+                        <button type="button" class="layui-btn layui-btn-fluid layui-btn-primary" onclick="search()"
+                            lay-on="reg-get-vercode">搜索</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!--单位信息面板-->
+        <fieldset class="layui-elem-field" id="unit">
+
+            <legend id="unit_title" onclick="info_show(1,0)">单位<i class="layui-icon layui-icon-down"></i></legend>
+            <br />
+
+            <div class="layui-field-box layui-row" id="unit_info">
+
+            </div>
+
+        </fieldset>
+
+        <!--人员信息面板-->
+        <fieldset class="layui-elem-field" id="user">
+
+            <legend id="user_title" onclick="info_show(0,1)"> 人员<i class="layui-icon layui-icon-down"></i> </legend>
+            <br />
+            <div class="layui-field-box layui-row" id="user_info">
+                <!--
+                    <div class="layui-col-xs4 layui-col-sm3 layui-col-md2"> <a href="" class="a1"> </a> </div>
+                -->
+            </div>
+
+        </fieldset>
+
+    </div>
+
+
+
+    </div>
+    <script src="/static/layui/layui.js"></script>
+    <script src="/static/js/1.js"></script>
+    <script>
+
+        var uid = getQueryParamByName("uid")
+        var url = "/ujson?uid=" + uid
+        var $ = layui.$;
+        var layer = layui.layer;
+        //
+        var user = []
+        var unit = []
+        //
+
+
+        $.get(url, function (data) {
+            
+            //
+            var jsdata = data
+            //
+            user = JSON.parse(jsdata["user"])
+            unit = JSON.parse(jsdata["unit"])
+            //
+            set_unit(unit)
+            info_show(1, 0)
+            //
+            console.log(user, unit)
+
+        }).fail(function (jqXHR, textStatus, errorThrown) {
+            console.error('请求失败: ', textStatus, errorThrown);
+        });
+        //
+        function set_unit(arr) {
+            if (arr == []) {
+                $("#unit_info").html("")
+            }
+            else {
+                var re = ""
+                for (var q in arr) {
+                    re = re + formatString(
+                        "<div class=\"layui-col-xs6 layui-col-sm4 layui-col-md3\"><a href=\"javascript:setuser1({1})\"class=\"a1\">{0}</a></div>", arr[q]["unit"], arr[q]["sid"]
+                    )
+                }
+                //
+                $("#unit_info").html(re)
+            }
+        }
+
+        //
+        function set_user(arr) {
+            console.log(arr)
+            if (arr == []) {
+                $("#user_info").html("")
+            }
+            else {
+                var re = ""
+                for (var q in arr) {
+                    re = re + formatString(
+                        "<div class=\"layui-col-xs6 layui-col-sm4 layui-col-md3\"><a href=\"javascript:user_click({1})\" class=\"a1\">{0}</a></div>"
+                        , arr[q]["name"]
+                        , arr[q]["sid"]
+                    )
+                }
+                $("#user_info").html(re)
+            }
+        }
+        //
+        function setunit1() {
+            set_unit(unit)
+            info_show(1, 0)
+        }
+        //
+        function setuser1(uid) {
+            var arr1 = user.filter(
+                item => item["uid"] === uid
+            );
+            console.log("setuser1", uid, arr1)
+            set_user(arr1)
+            info_show(0, 1)
+        }
+        function info_show(q1, q2) {
+            //
+            if (q1 == 1) {
+                $("#unit_info").show()
+                $("#unit_title").html('单位 <i class="layui-icon layui-icon-down"></i> ')
+            }
+            else if (q1 == 0) {
+                $("#unit_info").hide()
+                $("#unit_title").html('单位 <i class="layui-icon layui-icon-up"></i> ')
+            }
+            //
+            if (q2 == 1) {
+                $("#user_info").show()
+                $("#user_title").html('人员 <i class="layui-icon layui-icon-down"></i> ')
+
+            }
+            else if (q2 == 0) {
+                $("#user_info").hide()
+                $("#user_title").html('人员 <i class="layui-icon layui-icon-up"></i> ')
+            }
+
+        }
+        function user_click(uid) {
+
+            var us1 = user.filter(
+                item => item["sid"] === uid
+            );
+            if(us1.length==1)
+            {
+                var uss1=us1[0]
+                //
+                var content='<div>'
+                content=content+formatString("<p>{0} : {1}</p>","姓名",uss1["name"])
+                content=content+formatString("<br/><p>{0} : <a href='tel:{1}'>{1}</a></p>","电话",uss1["tel1"])
+
+                var colname={
+                    'tel2': '电话2', 'tel3': '紧急电话', 'work': '职务'
+                }
+                for(var q in uss1)
+                {
+                    if(["name","tel1","sid","uid","work"].includes(q)==false){
+                        if(q.indexOf("tel")!=-1){
+                            content=content+formatString("<br/><p>{0} :  <a href='tel:{1}'>{1}</a></p>",colname[q],uss1[q])
+                        }
+                        else{
+                            content=content+formatString("<br/><p>{0} : {1}</p>",colname[q],uss1[q])
+                        }
+                        
+                    }
+                }
+                content=content+"</div>"
+
+                // 弹出层的内容
+
+
+                // 弹出层配置
+                layer.open({
+                    type: 1, // 这里 type 为 1 表示普通的页面层
+                    area: ['250px', '200px'], // 设置弹出层的宽高
+                    title: '用户信息', // 弹出层的标题
+                    content: content, // 弹出层显示的内容
+                    skin: 'pretty-layer' // 这里是关键，指定自定义样式的类名
+                });
+            }
+
+
+            
+        }
+
+        function search() {
+            var searchString = $("#stxt").val()
+            //
+            var u1 = unit.filter(obj => Object.values(obj).some(value => typeof value === 'string' && value.includes(searchString)));
+            var u2 = user.filter(obj => Object.values(obj).some(value => typeof value === 'string' && value.includes(searchString)));
+            //
+            set_unit(u1)
+            set_user(u2)
+            //
+            info_show(1, 1)
+
+        }
+
+
+
+    </script>
+</body>
+
+</html>
